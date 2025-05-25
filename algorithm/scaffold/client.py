@@ -1,5 +1,5 @@
 from algorithm.base.client import BaseClient 
-from utils.train_helper import set_parameters
+from utils import set_parameters
 from algorithm.import_lib import *
 from algorithm.scaffold.scaffold_utils import set_c_local, load_c_local
 from logging import INFO, log

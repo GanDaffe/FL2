@@ -1,30 +1,15 @@
 from algorithm.import_lib import *
 
-class FedAvg(fl.server.strategy.Strategy): 
-
+class FedAvg(fl.server.strategy.Strategy):
     def __init__(
-            self, 
-            exp_name: str,
-            algo_name: str,
-            net,
-            num_rounds: int,
-            num_clients: int,
-            testloader, 
-            device,
-            decay_rate: float = 0.995,
-            fraction_fit: float = 1.0,
-            fraction_evaluate: float = 1.0,
-            min_fit_clients: int = 2,
-            min_evaluate_clients: int = 2,
-            min_available_clients: int = 2,
-            learning_rate: float = 0.01,
-            current_parameters: Optional[Parameters] = None):
-        
-
+        self, exp_name, algo_name, num_rounds, num_clients, device,
+        decay_rate=0.995, fraction_fit=1.0, fraction_evaluate=1.0,
+        min_fit_clients=2, min_evaluate_clients=2, min_available_clients=2,
+        learning_rate=0.01, current_parameters=None
+    ):
         super().__init__()
         self.exp_name = exp_name
         self.algo_name = algo_name
-        self.net = net
         self.num_rounds = num_rounds
         self.num_clients = num_clients
         self.fraction_fit = fraction_fit
@@ -34,121 +19,91 @@ class FedAvg(fl.server.strategy.Strategy):
         self.min_available_clients = min_available_clients
         self.learning_rate = learning_rate
         self.current_parameters = current_parameters
-        self.testloader = testloader
         self.device = device
-        self.decay_rate = decay_rate 
+        self.decay_rate = decay_rate
+        self.result = {
+            "round": [],
+            "train_loss": [],
+            "train_accuracy": [],
+            "test_loss": [],
+            "test_accuracy": [],
+            "test_precision": [],
+            "test_recall": [],
+            "test_f1": []
+        }
 
-        self.result = {"round": [], "train_loss": [], "train_accuracy": [], "test_loss": [], "test_accuracy": []}
+    def __repr__(self):
+        return "FedAvg"
 
-
-    def __repr__(self) -> str: 
-        return 'FedAvg' 
-    
-    
-    def initialize_parameters(
-        self, client_manager: ClientManager
-    ) -> Optional[Parameters]:
-        """Initialize global model parameters."""
+    def initialize_parameters(self, client_manager):
         return self.current_parameters
 
-
-    def configure_fit(
-        self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> List[Tuple[ClientProxy, FitIns]]:
-        """Configure the next round of training."""
+    def configure_fit(self, server_round, parameters, client_manager):
         sample_size, min_num_clients = self.num_fit_clients(client_manager.num_available())
-        clients = client_manager.sample(num_clients=sample_size, min_num_clients=min_num_clients)
-
-        config = {"learning_rate": self.learning_rate, "device": self.device} 
+        clients = client_manager.sample(sample_size, min_num_clients)
+        config = {"learning_rate": self.learning_rate, "device": self.device}
         self.learning_rate *= self.decay_rate
-        
-        fit_ins = FitIns(parameters, config)
+        return [(client, FitIns(parameters, config)) for client in clients]
 
-        fit_configs = [(client, fit_ins) for client in clients]
-        return fit_configs
+    def aggregate_fit(self, server_round, results, failures):
+        self.current_parameters = ndarrays_to_parameters(
+            aggregate([(parameters_to_ndarrays(f.parameters), f.num_examples) for _, f in results])
+        )
+        examples = [f.num_examples for _, f in results]
+        total = sum(examples)
 
+        def weighted_avg(metric_name):
+            return sum(f.num_examples * f.metrics[metric_name] for _, f in results) / total
 
-    def aggregate_fit(
-        self,
-        server_round: int,
-        results: List[Tuple[ClientProxy, FitRes]],
-        failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
-    ) -> Tuple[Optional[Parameters], Dict[str, Scalar]]:
-        """Aggregate fit results using weighted average."""
-        weights_results = [(parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples) for _, fit_res in results]
-        self.current_parameters = ndarrays_to_parameters(aggregate(weights_results))
-        metrics_aggregated = {}
-
-        losses = [fit_res.num_examples * fit_res.metrics["loss"] for _, fit_res in results]
-        corrects = [round(fit_res.num_examples * fit_res.metrics["accuracy"]) for _, fit_res in results]
-        examples = [fit_res.num_examples for _, fit_res in results]
-        loss = sum(losses) / sum(examples)
-        accuracy = sum(corrects) / sum(examples)
+        loss = weighted_avg("loss")
+        acc = weighted_avg("accuracy")
 
         self.result["round"].append(server_round)
         self.result["train_loss"].append(loss)
-        self.result["train_accuracy"].append(accuracy)
-        print(f"train_loss: {loss} - train_acc: {accuracy}")
+        self.result["train_accuracy"].append(acc)
 
-        return self.current_parameters, metrics_aggregated
+        print(f"Train R{server_round}: loss={loss:.4f}, acc={acc:.4f}")
 
+        return self.current_parameters, {}
 
-    def configure_evaluate(
-        self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> List[Tuple[ClientProxy, EvaluateIns]]:
-        """Configure the next round of evaluation."""
+    def configure_evaluate(self, server_round, parameters, client_manager):
+        sample_size, min_num_clients = self.num_evaluation_clients(client_manager.num_available())
+        clients = client_manager.sample(sample_size, min_num_clients)
+        config = {"device": self.device}
+        return [(client, EvaluateIns(parameters, config)) for client in clients]
 
+    def aggregate_evaluate(self, server_round, results, failures):
+        examples = [r.num_examples for _, r in results]
+        total = sum(examples)
 
-        return []
+        def weighted_avg(metric_name):
+            return sum(r.num_examples * r.metrics[metric_name] for _, r in results) / total
 
+        loss = sum(r.num_examples * r.loss for _, r in results) / total
+        acc = weighted_avg("accuracy")
+        prec = weighted_avg("precision")
+        rec = weighted_avg("recall")
+        f1 = weighted_avg("f1")
 
-    def aggregate_evaluate(
-        self,
-        server_round: int,
-        results: List[Tuple[ClientProxy, EvaluateRes]],
-        failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
-    ) -> Tuple[Optional[float], Dict[str, Scalar]]:
-        """Aggregate evaluation losses using weighted average."""
-
-        metrics_aggregated = {}
-
-        loss, metrics = self.evaluate(server_round, self.current_parameters)
-            
-        print(f"test_loss: {loss} - test_acc: {metrics['accuracy']}")
-
-        return loss, metrics_aggregated
-
-
-    def evaluate(
-        self, server_round: int, parameters: Parameters
-    ) -> Optional[Tuple[float, Dict[str, Scalar]]]:
-        """Evaluate global model parameters using an evaluation function."""
-
-        test_net = copy.deepcopy(self.net)  
-        set_parameters(test_net, parameters_to_ndarrays(parameters))    
-        
-        loss, accuracy = test(test_net, self.testloader, self.device)
-
-        if server_round != 0:  
+        if server_round != 0:
             self.result["test_loss"].append(loss)
-            self.result["test_accuracy"].append(accuracy)
+            self.result["test_accuracy"].append(acc)
+            self.result["test_precision"].append(prec)
+            self.result["test_recall"].append(rec)
+            self.result["test_f1"].append(f1)
 
-        print(f"test_loss: {loss} - test_acc: {accuracy}")
+        print(f"Test R{server_round}: loss={loss:.4f}, acc={acc:.4f}, prec={prec:.4f}, recall={rec:.4f}, f1={f1:.4f}")
 
         if server_round == self.num_rounds:
-            df = pd.DataFrame(self.result)
-            df.to_csv(f"result/{self.algo_name}_{self.exp_name}.csv", index=False)
+            pd.DataFrame(self.result).to_csv(f"result/{self.algo_name}_{self.exp_name}.csv", index=False)
 
-        return float(loss), {"accuracy": accuracy}
+        return loss, {}
 
+    def evaluate(self, server_round, parameters):
+        return None
 
-    def num_fit_clients(self, num_available_clients: int) -> Tuple[int, int]:
-        """Return sample size and required number of clients."""
-        num_clients = int(num_available_clients * self.fraction_fit)
-        return max(num_clients, self.min_fit_clients), self.min_available_clients
+    def num_fit_clients(self, num_available):
+        return max(int(num_available * self.fraction_fit), self.min_fit_clients), self.min_available_clients
 
-
-    def num_evaluation_clients(self, num_available_clients: int) -> Tuple[int, int]:
-        """Use a fraction of available clients for evaluation."""
-        num_clients = int(num_available_clients * self.fraction_evaluate)
-        return max(num_clients, self.min_evaluate_clients), self.min_available_clients
+    def num_evaluation_clients(self, num_available):
+        return max(int(num_available * self.fraction_evaluate), self.min_evaluate_clients), self.min_available_clients

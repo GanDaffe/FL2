@@ -1,2 +1,2 @@
-from BN_CNN import BN_CNN
-from CNN import CNN 
+from models.BN_CNN import BN_CNN
+from models.CNN import CNN 

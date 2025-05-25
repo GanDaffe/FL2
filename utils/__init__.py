@@ -1,2 +1,2 @@
-from fl_utils import *
-from processing import get_clients_dataset
+from utils.fl_utils import *
+from utils.processing import get_clients_dataset

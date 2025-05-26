@@ -29,7 +29,11 @@ class FedAvg(fl.server.strategy.Strategy):
             "test_accuracy": [],
             "test_precision": [],
             "test_recall": [],
-            "test_f1": []
+            "test_f1": [], 
+            "test_tp": [], 
+            "test_fp": [], 
+            "test_tn": [], 
+            "test_fn": []
         }
 
     def __repr__(self):
@@ -78,12 +82,16 @@ class FedAvg(fl.server.strategy.Strategy):
 
         def weighted_avg(metric_name):
             return sum(r.num_examples * r.metrics[metric_name] for _, r in results) / total
-
+        
         loss = sum(r.num_examples * r.loss for _, r in results) / total
         acc = weighted_avg("accuracy")
         prec = weighted_avg("precision")
         rec = weighted_avg("recall")
         f1 = weighted_avg("f1")
+        TP = weighted_avg("TP") 
+        FP = weighted_avg("FP") 
+        TN = weighted_avg("TN") 
+        FN = weighted_avg("FN") 
 
         if server_round != 0:
             self.result["test_loss"].append(loss)
@@ -91,6 +99,10 @@ class FedAvg(fl.server.strategy.Strategy):
             self.result["test_precision"].append(prec)
             self.result["test_recall"].append(rec)
             self.result["test_f1"].append(f1)
+            self.result["test_tp"].append(TP)
+            self.result["test_fp"].append(FP) 
+            self.result["test_tn"].append(TN) 
+            self.result["test_fn"].append(FN)  
 
         print(f"Test R{server_round}: loss={loss:.4f}, acc={acc:.4f}, prec={prec:.4f}, recall={rec:.4f}, f1={f1:.4f}")
 

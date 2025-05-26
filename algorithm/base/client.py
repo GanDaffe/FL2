@@ -23,10 +23,14 @@ class BaseClient(fl.client.NumPyClient):
 
     def evaluate(self, parameters, config):
         set_parameters(self.net, parameters)
-        loss, acc, prec, rec, f1 = test(self.net, self.valloader, config["device"])
+        loss, acc, prec, rec, f1, TP, FP, FN, TN = test(self.net, self.valloader, config["device"])
         return loss, len(self.valloader.sampler), {
             "accuracy": acc,
             "precision": prec,
             "recall": rec,
-            "f1": f1
+            "f1": f1, 
+            "TP": TP, 
+            "FP": FP, 
+            "FN": FN, 
+            "TN": TN
         }

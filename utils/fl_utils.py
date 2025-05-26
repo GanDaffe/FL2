@@ -8,7 +8,7 @@ import gc
 import copy
 import pandas as a
 from torch import nn
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score
 
 def accuracy_fn(y_true, y_pred):
     correct = torch.eq(y_true, y_pred).sum().item()
@@ -71,7 +71,6 @@ def test(net, testloader, device):
             loss = criterion(outputs, labels)
 
             preds = torch.argmax(outputs, dim=1)
-
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
@@ -81,9 +80,16 @@ def test(net, testloader, device):
 
     total_loss /= tot
     accuracy = corrects / tot
+
+    cm = confusion_matrix(all_labels, all_preds)
+    TP = np.diag(cm)
+    FP = np.sum(cm, axis=0) - TP
+    FN = np.sum(cm, axis=1) - TP
+    TN = np.sum(cm) - (TP + FP + FN)
+
     precision = precision_score(all_labels, all_preds, average='macro', zero_division=0)
     recall = recall_score(all_labels, all_preds, average='macro', zero_division=0)
     f1 = f1_score(all_labels, all_preds, average='macro', zero_division=0)
 
-    return total_loss, accuracy, precision, recall, f1
+    return total_loss, accuracy, precision, recall, f1, TP.sum(), FP.sum(), FN.sum(), TN.sum()
 

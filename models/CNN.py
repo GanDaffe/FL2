@@ -40,17 +40,6 @@ class CNN(nn.Module):
             kernel_size=3,
             padding='same')
 
-        self.conv7 = nn.Conv2d(
-            in_channels=16,
-            out_channels=16,
-            kernel_size=3,
-            padding='same')
-
-        self.conv8 = nn.Conv2d(
-            in_channels=16,
-            out_channels=8,
-            kernel_size=3,
-            padding='same')
 
         self.pool = nn.MaxPool2d(kernel_size=2)
         self.relu = nn.ReLU()

@@ -56,14 +56,13 @@ class CNN(nn.Module):
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.1)
 
-        self.lin1 = nn.Linear(in_features=8 * 1 * 16, out_features=256)
+        self.lin1 = nn.Linear(16 * 2 * 32, 256)
         self.classification = nn.Linear(256, out_features=num_classes)
 
     def forward(self, X):
         X = self.pool(self.relu(self.conv2(self.relu(self.conv1(X)))))
         X = self.pool(self.relu(self.conv4(self.relu(self.conv3(X)))))
         X = self.pool(self.relu(self.conv6(self.relu(self.conv5(X)))))
-        X = self.pool(self.relu(self.conv8(self.relu(self.conv7(X)))))
 
         X = torch.flatten(X, start_dim=1)
         X = self.lin1(X)

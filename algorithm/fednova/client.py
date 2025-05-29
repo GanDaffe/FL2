@@ -1,6 +1,7 @@
 from algorithm.base.client import BaseClient 
 from algorithm.import_lib import *
-from algorithm.fednova.fednova_utils import * 
+from algorithm.fednova.fednova_utils import ProxSGD
+from utils import train
 
 class FedNovaClient(BaseClient):
     def __init__(self, *args, ratio, **kwargs):
@@ -36,7 +37,7 @@ class FedNovaClient(BaseClient):
         self.set_parameters(parameters, lr)
         num_epochs = 1
 
-        train_loss, train_acc = train_fednova(
+        train_loss, train_acc = train(
             self.net,
             self.optimizer,
             self.trainloader,
@@ -49,7 +50,7 @@ class FedNovaClient(BaseClient):
         metrics = {
             "accuracy": train_acc,
             "loss": train_loss,
-            "tau": grad_scaling_factor["tau"],      # Extract scalar values
+            "tau": grad_scaling_factor["tau"],     
             "local_norm": grad_scaling_factor["local_norm"],
             "weight": grad_scaling_factor["weight"]
         }

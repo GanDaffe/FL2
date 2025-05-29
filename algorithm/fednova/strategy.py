@@ -1,7 +1,6 @@
 from logging import INFO, log
 from algorithm.import_lib import *
 from algorithm.base.strategy import FedAvg
-from algorithm.fednova.fednova_utils import test_fednova
 
 class FedNovaStrategy(FedAvg):
     def __init__(self, gmf = 0, *args, **kwargs):
@@ -65,24 +64,3 @@ class FedNovaStrategy(FedAvg):
 
             else:
                 self.global_parameters[i] -= layer_cum_grad
-
-    def evaluate(
-        self, server_round: int, parameters: Parameters
-    ) -> Optional[Tuple[float, Dict[str, Scalar]]]:
-        """Evaluate global model parameters using an evaluation function."""
-
-        test_net = copy.deepcopy(self.net)  
-        set_parameters(test_net, parameters_to_ndarrays(parameters))  
-
-        loss, metrics = test_fednova(test_net, self.testloader, device=self.device)
-        print(f"test_loss: {loss} - test_acc: {metrics['accuracy']}")
-    
-        if server_round != 0:
-            self.result["test_loss"].append(loss)
-            self.result["test_accuracy"].append(metrics['accuracy'])
-
-        if server_round == self.num_rounds:
-            df = pd.DataFrame(self.result)
-            df.to_csv(f"result/{self.algo_name}_{self.exp_name}.csv", index=False)
-            
-        return float(loss), metrics

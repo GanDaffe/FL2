@@ -9,7 +9,8 @@ from algorithm import *
 from utils import *
 from models import CNN, BN_CNN
 
-EXP_NAME = 'FedAvg'
+ALGO_NAME = 'fedavg'
+EXP_NAME = ''
 NUM_DOMAINS = 3
 NUM_CLIENTS_PER_DOMAIN = 3
 BATCH_SIZE = 32
@@ -43,7 +44,26 @@ def base_client_fn(cid: str):
     net = BN_CNN(in_channel=1, num_classes=3)
     return BaseClient(cid, net, trainloaders[idx], valloaders[idx], criterion).to_client()
 
-net_ = BN_CNN(in_channel=1, num_classes=3)
+algo = None
+
+if ALGO_NAME == 'fedavg': 
+    algo = FedAvg
+elif ALGO_NAME == 'fedprox': 
+    algo = FedProx 
+elif ALGO_NAME == 'fedadp': 
+    algo = FedAdp
+elif ALGO_NAME == 'fedadam': 
+    algo = FedAdam 
+elif ALGO_NAME == 'fedavgM':
+    algo = FedAvgM
+elif ALGO_NAME == 'fedadagrad': 
+    algo = FedAdagrad 
+elif ALGO_NAME == 'moon': 
+    algo = MOON
+elif ALGO_NAME == 'fednova': 
+    algo = FedNovaStrategy
+
+net_ = init_model() if ALGO_NAME == 'moon' else BN_CNN(in_channel=1, num_classes=3) 
 current_parameters = ndarrays_to_parameters(get_parameters(net_))
 client_resources = {"num_cpus": 1, "num_gpus": 0.2} if DEVICE == "cuda" else {"num_cpus": 1, "num_gpus": 0.0}
 
@@ -51,10 +71,10 @@ fl.simulation.start_simulation(
             client_fn           = base_client_fn,
             num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,
             config              = fl.server.ServerConfig(num_rounds=NUM_ROUNDS),
-            strategy            = FedAvg(
+            strategy            = algo(
                 learning_rate       = LEARNING_RATE,
                 exp_name            = EXP_NAME,
-                algo_name           = 'FedAvg',
+                algo_name           = ALGO_NAME,
                 device              = DEVICE,
                 num_rounds          = NUM_ROUNDS,
                 num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,

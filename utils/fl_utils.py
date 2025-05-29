@@ -90,6 +90,10 @@ def test(net, testloader, device):
     precision = precision_score(all_labels, all_preds, average='macro', zero_division=0)
     recall = recall_score(all_labels, all_preds, average='macro', zero_division=0)
     f1 = f1_score(all_labels, all_preds, average='macro', zero_division=0)
-
-    return total_loss, accuracy, precision, recall, f1, TP.sum(), FP.sum(), FN.sum(), TN.sum()
+    
+    TP_ = int(TP) 
+    TP_ = int(FP)
+    TP_ = int(FN) 
+    TN_ = int(TN)
+    return total_loss, accuracy, precision, recall, f1, TP_, TP_, TP_, TN_
 

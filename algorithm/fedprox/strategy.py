@@ -22,7 +22,7 @@ class FedProx(FedAvg):
         sample_size, min_num_clients = self.num_fit_clients(client_manager.num_available())
         clients = client_manager.sample(num_clients=sample_size, min_num_clients=min_num_clients)
 
-        config = {"learning_rate": self.learning_rate, "proximal_mu": self.proximal_mu}
+        config = {"learning_rate": self.learning_rate, "proximal_mu": self.proximal_mu, 'device': self.device}
         self.learning_rate *= self.decay_rate
         fit_ins = FitIns(parameters, config)
 

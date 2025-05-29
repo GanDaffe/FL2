@@ -26,3 +26,4 @@ from algorithm.moon.moon_client import MoonClient
 from algorithm.moon.moon_strategy import MOON
 
 from algorithm.moon.moon_model import init_model
+from algorithm.scaffold.scaffold_utils import load_c_local

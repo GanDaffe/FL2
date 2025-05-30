@@ -73,8 +73,7 @@ def base_client_fn(cid: str):
         c_local = load_c_local(idx)
         return SCAFFOLD_CLIENT(cid, net, trainloaders[idx], valloaders[idx], criterion, c_local=c_local).to_client()  
     elif ALGO_NAME == 'fedprox': 
-        return (cid, net, trainloaders[idx], valloaders[idx], criterion).to_client()
-    
+        return FedProxClient(cid, net, trainloaders[idx], valloaders[idx], criterion).to_client()
     return BaseClient(cid, net, trainloaders[idx], valloaders[idx], criterion).to_client()
 
 net_ = init_model() if ALGO_NAME == 'moon' else BN_CNN(in_channel=1, num_classes=3) 

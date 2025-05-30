@@ -9,6 +9,7 @@ import copy
 import pandas as a
 from torch import nn
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score
+from algorithm.moon.moon_model import ModelMoon
 
 def accuracy_fn(y_true, y_pred):
     correct = torch.eq(y_true, y_pred).sum().item()
@@ -67,10 +68,19 @@ def test(net, testloader, device):
     with torch.no_grad():
         for images, labels in testloader:
             images, labels = images.to(device), labels.to(device)
-            outputs = net(images)
+
+            if isinstance(net, ModelMoon): 
+                _, _, outputs = net(images)
+            else:
+                outputs = net(images)
+
             loss = criterion(outputs, labels)
 
-            preds = torch.argmax(outputs, dim=1)
+            if isinstance(net, ModelMoon):
+                _, pred = torch.max(outputs.data, 1)
+            else:  
+                preds = torch.argmax(outputs, dim=1)
+                
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 

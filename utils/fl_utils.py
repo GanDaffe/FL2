@@ -77,10 +77,10 @@ def test(net, testloader, device):
             loss = criterion(outputs, labels)
 
             if isinstance(net, ModelMoon):
-                _, pred = torch.max(outputs.data, 1)
+                _, preds = torch.max(outputs.data, 1)
             else:  
                 preds = torch.argmax(outputs, dim=1)
-                
+
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 

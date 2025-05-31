@@ -59,7 +59,8 @@ elif ALGO_NAME == 'moon':
     client = MoonClient
 elif ALGO_NAME == 'fednova': 
     algo = FedNovaStrategy
-
+elif ALGO_NAME == 'scaffold': 
+    algo = SCAFFOLD
 def base_client_fn(cid: str):
     idx = int(cid)
     criterion = nn.CrossEntropyLoss()

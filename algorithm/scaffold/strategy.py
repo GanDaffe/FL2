@@ -84,23 +84,3 @@ class SCAFFOLD(FedAvg):
             
         return ndarrays_to_parameters(self.current_weights), metrics_aggregated
     
-    def evaluate(
-        self, server_round: int, parameters: Parameters
-    ) -> Optional[Tuple[float, Dict[str, Scalar]]]:
-        """Evaluate model parameters using an evaluation function."""
-
-        test_net = copy.deepcopy(self.net)  
-        set_parameters(test_net, parameters_to_ndarrays(parameters))    
-
-        loss, accuracy = test_scaffold(test_net, self.testloader)
-        print(f"test_loss: {loss} - test_acc: {accuracy}")
-    
-        if server_round != 0: 
-            self.result["test_loss"].append(loss)
-            self.result["test_accuracy"].append(accuracy)
-        
-        if server_round == self.num_rounds:
-            df = pd.DataFrame(self.result)
-            df.to_csv(f"result/{self.algo_name}_{self.exp_name}.csv", index=False)
-
-        return float(loss), {"accuracy": accuracy}

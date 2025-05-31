@@ -13,6 +13,7 @@ ALGO_NAME = 'fedavg'
 EXP_NAME = ''
 NUM_DOMAINS = 3
 NUM_CLIENTS_PER_DOMAIN = 3
+NUM_EPOCHS = 5
 BATCH_SIZE = 32
 RANDOM_STATE = 42
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -65,16 +66,16 @@ def base_client_fn(cid: str):
     net = BN_CNN(in_channel=1, num_classes=3)
     if ALGO_NAME == 'fednova': 
         client_dataset_ratio: float = int(num_samples / (NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN)) / len(num_samples)
-        return FedNovaClient(cid, net, trainloaders[idx, valloaders[idx]], criterion, ratio=client_dataset_ratio).to_client()
+        return FedNovaClient(cid, net, trainloaders[idx, valloaders[idx]], criterion, num_epochs=NUM_EPOCHS, ratio=client_dataset_ratio).to_client()
     elif ALGO_NAME == 'moon':  
         net_moon = init_model() 
-        return MoonClient(cid, net_moon, trainloaders[idx], valloaders[idx], criterion, dir='/moon_cp/moon_models').to_client()
+        return MoonClient(cid, net_moon, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS, dir='/moon_cp/moon_models').to_client()
     elif ALGO_NAME == 'scaffold': 
         c_local = load_c_local(idx)
-        return SCAFFOLD_CLIENT(cid, net, trainloaders[idx], valloaders[idx], criterion, c_local=c_local).to_client()  
+        return SCAFFOLD_CLIENT(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS, c_local=c_local).to_client()  
     elif ALGO_NAME == 'fedprox': 
-        return FedProxClient(cid, net, trainloaders[idx], valloaders[idx], criterion).to_client()
-    return BaseClient(cid, net, trainloaders[idx], valloaders[idx], criterion).to_client()
+        return FedProxClient(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS).to_client()
+    return BaseClient(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS).to_client()
 
 net_ = init_model() if ALGO_NAME == 'moon' else BN_CNN(in_channel=1, num_classes=3) 
 current_parameters = ndarrays_to_parameters(get_parameters(net_))

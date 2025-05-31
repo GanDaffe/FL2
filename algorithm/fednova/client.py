@@ -1,7 +1,6 @@
 from algorithm.base.client import BaseClient 
 from algorithm.import_lib import *
 from algorithm.fednova.fednova_utils import ProxSGD
-from utils import train
 
 class FedNovaClient(BaseClient):
     def __init__(self, *args, ratio, **kwargs):
@@ -35,14 +34,13 @@ class FedNovaClient(BaseClient):
         lr = config['learning_rate'] 
 
         self.set_parameters(parameters, lr)
-        num_epochs = 1
 
         train_loss, train_acc = train(
             self.net,
             self.optimizer,
             self.trainloader,
             config['device'],
-            num_epochs,
+            self.num_epochs,
         )
 
         grad_scaling_factor = self.optimizer.get_gradient_scaling()

@@ -24,37 +24,47 @@ def set_parameters(net, parameters: List[np.ndarray]):
     state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
     net.load_state_dict(state_dict)
 
-def train(net, trainloader, criterion, optimizer, device, proximal_mu: float = None):
+def train(net, trainloader, criterion, optimizer, device, num_epochs: int = 1, proximal_mu: float = None):
     net.to(device)
     net.train()
-    running_loss, running_corrects, tot = 0.0, 0, 0
+    loss_, acc = 0.0, 0
 
     global_params = copy.deepcopy(net).parameters()
 
-    for images, labels in trainloader:
-        images, labels = images.to(device), labels.to(device)
-        optimizer.zero_grad()
-        outputs = net(images)
+    for _ in range(num_epochs): 
+        running_loss, running_corrects, tot = 0.0, 0, 0
 
-        loss = criterion(outputs, labels)
+        for images, labels in trainloader:
 
-        if proximal_mu is not None:
-            proximal_term = sum((local - global_).norm(2)
-                                for local, global_ in zip(net.parameters(), global_params))
-            loss += (proximal_mu / 2) * proximal_term
+            images, labels = images.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = net(images)
 
-        loss.backward()
-        optimizer.step()
+            loss = criterion(outputs, labels)
 
-        preds = torch.argmax(outputs, dim=1)
+            if proximal_mu is not None:
+                proximal_term = sum((local - global_).norm(2)
+                                    for local, global_ in zip(net.parameters(), global_params))
+                loss += (proximal_mu / 2) * proximal_term
 
-        tot += images.size(0)
-        running_corrects += torch.sum(preds == labels).item()
-        running_loss += loss.item() * images.size(0)
+            loss.backward()
+            optimizer.step()
 
-    running_loss /= tot
-    accuracy = running_corrects / tot
+            preds = torch.argmax(outputs, dim=1)
+
+            tot += images.size(0)
+            running_corrects += torch.sum(preds == labels).item()
+            running_loss += loss.item() * images.size(0)
+
+        running_loss /= tot
+        accuracy = running_corrects / tot
+
+        loss_ += running_loss
+        acc += accuracy 
     
+    loss_ /= num_epochs
+    acc /= num_epochs
+
     return running_loss, accuracy
 
 

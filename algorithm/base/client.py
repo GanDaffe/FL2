@@ -1,12 +1,13 @@
 from algorithm.import_lib import *
 
 class BaseClient(fl.client.NumPyClient):
-    def __init__(self, cid, net, trainloader, valloader, criterion):
+    def __init__(self, cid, net, trainloader, valloader, criterion, num_epochs=1):
         self.cid = cid
         self.net = net
         self.trainloader = trainloader
         self.valloader = valloader
         self.criterion = criterion
+        self.num_epochs = num_epochs
 
     def get_parameters(self, config):
         return get_parameters(self.net)
@@ -14,7 +15,8 @@ class BaseClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         set_parameters(self.net, parameters)
         optimizer = torch.optim.SGD(self.net.parameters(), lr=config["learning_rate"])
-        loss, acc = train(self.net, self.trainloader, self.criterion, optimizer, device=config["device"])
+        loss, acc = train(self.net, self.trainloader, self.criterion, optimizer, device=config["device"], num_epochs=self.num_epochs)
+        
         return self.get_parameters(config), len(self.trainloader.sampler), {
             "loss": loss,
             "accuracy": acc,

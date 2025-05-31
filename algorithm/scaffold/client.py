@@ -17,7 +17,7 @@ class SCAFFOLD_CLIENT(BaseClient):
         results = self.train_scaffold(
             net=self.net,
             trainloader=self.trainloader,
-            epochs=1,
+            epochs=self.num_epochs,
             learning_rate=lr,
             device=config['device'],
             config=config,
@@ -34,7 +34,7 @@ class SCAFFOLD_CLIENT(BaseClient):
             log(INFO, f"No cache found for c_local")
             c_local = [torch.zeros_like(param) for param in self.net.parameters()]
 
-        net.to(device)  # Move model to GPU if available TODO: Make everything work on GPU.
+        net.to(device)  
         net.train()
         
         loss_avg, running_corrects, tot_sample = 0, 0, 0
@@ -57,8 +57,7 @@ class SCAFFOLD_CLIENT(BaseClient):
                 loss.backward()
                 self.optimizer.step()
 
-            # Local updates to the client model cf. Scaffold equation (n°3)
-            # Adds Scaffold computation of c_diff in parameters
+         
             for param, y_i, c_l, c_g in zip(self.net.parameters(), prebatch_params, c_local, c_global):
                 if param.requires_grad:
                     param.grad.data = y_i - (learning_rate * (param.grad.data - c_l + c_g))

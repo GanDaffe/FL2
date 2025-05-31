@@ -1,18 +1,17 @@
 from algorithm.import_lib import *
 from algorithm.base.strategy import FedAvg
-from algorithm.scaffold.scaffold_utils import test_scaffold
+
 class SCAFFOLD(FedAvg):
 
     def __init__(
         self,
         *args,
+        c_global,
         **kwargs, 
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs) 
 
-       
-
-        self.c_global = [torch.zeros_like(param) for param in self.net.parameters()]
+        self.c_global = c_global
         self.current_weights = [w.astype(np.float32) for w in parameters_to_ndarrays(self.current_parameters)]
         self.num_clients = self.num_clients
         self.global_learning_rate = self.learning_rate

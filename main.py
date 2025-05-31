@@ -61,6 +61,7 @@ elif ALGO_NAME == 'fednova':
     algo = FedNovaStrategy
 elif ALGO_NAME == 'scaffold': 
     algo = SCAFFOLD
+
 def base_client_fn(cid: str):
     idx = int(cid)
     criterion = nn.CrossEntropyLoss()
@@ -78,15 +79,26 @@ def base_client_fn(cid: str):
         return FedProxClient(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS).to_client()
     return BaseClient(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS).to_client()
 
+
 net_ = init_model() if ALGO_NAME == 'moon' else BN_CNN(in_channel=1, num_classes=3) 
 current_parameters = ndarrays_to_parameters(get_parameters(net_))
 client_resources = {"num_cpus": 1, "num_gpus": 0.2} if DEVICE == "cuda" else {"num_cpus": 1, "num_gpus": 0.0}
 
-fl.simulation.start_simulation(
-            client_fn           = base_client_fn,
-            num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,
-            config              = fl.server.ServerConfig(num_rounds=NUM_ROUNDS),
-            strategy            = algo(
+def get_strategy(): 
+    if ALGO_NAME == 'scaffold': 
+        c_global = [torch.zeros_like(param) for param in net_.parameters()]
+        return algo(
+                learning_rate       = LEARNING_RATE,
+                exp_name            = EXP_NAME,
+                algo_name           = ALGO_NAME,
+                device              = DEVICE,
+                c_global            = c_global,
+                num_rounds          = NUM_ROUNDS,
+                num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,
+                current_parameters  = current_parameters,
+            )
+    else:
+        return algo(
                 learning_rate       = LEARNING_RATE,
                 exp_name            = EXP_NAME,
                 algo_name           = ALGO_NAME,
@@ -94,6 +106,12 @@ fl.simulation.start_simulation(
                 num_rounds          = NUM_ROUNDS,
                 num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,
                 current_parameters  = current_parameters,
-                ),
+            )
+        
+fl.simulation.start_simulation(
+            client_fn           = base_client_fn,
+            num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,
+            config              = fl.server.ServerConfig(num_rounds=NUM_ROUNDS),
+            strategy            = get_strategy(),
             client_resources     = client_resources
         )

@@ -1,6 +1,26 @@
 import os
 import numpy as np
 import torch
+from algorithm.import_lib import *
+
+def serialize_c(tensor_list: List[torch.Tensor]) -> bytes:
+    flat = np.concatenate([t.cpu().detach().numpy().flatten() for t in tensor_list])
+    return flat.astype(np.float64).tobytes()
+
+def deserialize_c(byte_data: bytes, model: torch.nn.Module) -> List[torch.Tensor]:
+    flat_array = np.frombuffer(byte_data, dtype=np.float64)
+    shapes = [p.shape for p in model.parameters()]
+    sizes = [torch.prod(torch.tensor(s)).item() for s in shapes]
+
+    tensors = []
+    pointer = 0
+    for size, shape in zip(sizes, shapes):
+        chunk = flat_array[pointer:pointer+size]
+        tensor = torch.tensor(chunk, dtype=torch.float32).reshape(shape)
+        tensors.append(tensor)
+        pointer += size
+    return tensors
+
 def load_c_local(partition_id: int):
     path = "c_local_folder/" + str(partition_id) +".txt"
     if os.path.exists(path):

@@ -142,20 +142,6 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
 
         return local_stats
 
-    def set_model_params(self, init_params: NDArrays):
-        i = 0
-        for group in self.param_groups:
-            for p in group["params"]:
-                param_state = self.state[p]
-                param_tensor = torch.tensor(init_params[i])
-                p.data.copy_(param_tensor)
-                param_state["old_init"] = param_tensor
-                i += 1
-
-    def set_lr(self, lr: float):
-        for param_group in self.param_groups:
-            param_group["lr"] = lr
-
 def get_bn_param_indices(self, model_state_dict):
     bn_indices = []
     for idx, key in enumerate(model_state_dict.keys()):

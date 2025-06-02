@@ -1,7 +1,6 @@
 from logging import INFO, log
 from algorithm.import_lib import *
 from algorithm.base.strategy import FedAvg
-from algorithm.fednova.fednova_utils import get_bn_param_indices
 
 class FedNovaStrategy(FedAvg):
     def __init__(self, gmf = 0, *args, **kwargs):
@@ -52,24 +51,31 @@ class FedNovaStrategy(FedAvg):
         return ndarrays_to_parameters(self.global_parameters), {}
 
     def update_server_params(self, cum_grad: NDArrays):
-        for i, layer_cum_grad in enumerate(cum_grad):
-            if self.gmf != 0:
-                # check if it's the first round of aggregation, if so, initialize the
-                # global momentum buffer
+        print(f"Sample global param: {self.global_parameters[i].flatten()[:5]}")
+        print(f"Sample gradient: {layer_cum_grad.flatten()[:5]}")
 
+        for i, layer_cum_grad in enumerate(cum_grad):
+            global_shape = self.global_parameters[i].shape
+            grad_shape = layer_cum_grad.shape
+            print(f"[Update Param] Layer {i} | Global Param Shape: {global_shape} | Gradient Shape: {grad_shape}")
+
+            if self.gmf != 0:
                 if len(self.global_momentum_buffer) < len(cum_grad):
                     buf = layer_cum_grad / self.lr
                     self.global_momentum_buffer.append(buf)
-
                 else:
-                    # momentum updates using the global accumulated weights buffer
-                    # for each layer of network
                     self.global_momentum_buffer[i] *= self.gmf
                     self.global_momentum_buffer[i] += layer_cum_grad / self.lr
 
-                self.global_parameters[i] -= self.global_momentum_buffer[i] * self.lr
+                try:
+                    self.global_parameters[i] -= self.global_momentum_buffer[i] * self.lr
+                except ValueError as e:
+                    print(f"[ERROR] Broadcast error at layer {i}: {e}")
+                    raise
 
             else:
-                # weight updated eqn: x_new = x_old - gradient
-                # the layer_cum_grad already has all the learning rate multiple
-                self.global_parameters[i] -= layer_cum_grad
+                try:
+                    self.global_parameters[i] -= layer_cum_grad
+                except ValueError as e:
+                    print(f"[ERROR] Broadcast error at layer {i}: {e}")
+                    raise

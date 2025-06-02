@@ -14,15 +14,17 @@ class FedNovaClient(BaseClient):
         )
         
     def get_parameters(self, config: Dict[str, Scalar]) -> NDArrays:
-        params = []
-        for name, param in self.net.named_parameters():
-            state = self.optimizer.state[param]
-            if "cum_grad" in state:
-                params.append(state["cum_grad"].cpu().numpy())
+        params = [
+            val["cum_grad"].cpu().numpy()
+            for _, val in self.optimizer.state_dict()["state"].items()
+        ]
         return params
 
     def set_parameters(self, parameters):
+        for param, new_param in zip(self.net.parameters(), parameters):
+            param.data.copy_(torch.tensor(new_param).to(param.device))
         self.optimizer.set_model_params(parameters)
+
 
     def fit(self, parameters, config):
 

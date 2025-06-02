@@ -68,12 +68,12 @@ def base_client_fn(cid: str):
     net = BN_CNN(in_channel=1, num_classes=3)
     if ALGO_NAME == 'fednova': 
         client_dataset_ratio: float = int(num_samples / (NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN)) / len(num_samples)
-        return FedNovaClient(cid, net, trainloaders[idx, valloaders[idx]], criterion, num_epochs=NUM_EPOCHS, ratio=client_dataset_ratio).to_client()
+        return FedNovaClient(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS, ratio=client_dataset_ratio).to_client()
     elif ALGO_NAME == 'moon':  
         net_moon = init_model() 
         return MoonClient(cid, net_moon, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS, dir='/moon_cp/moon_models').to_client()
     elif ALGO_NAME == 'scaffold': 
-        c_local = load_c_local(idx)
+        c_local = load_c_local(idx, net)
         return SCAFFOLD_CLIENT(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS, c_local=c_local).to_client()  
     elif ALGO_NAME == 'fedprox': 
         return FedProxClient(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS).to_client()

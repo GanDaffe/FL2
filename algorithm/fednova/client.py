@@ -24,7 +24,7 @@ class FedNovaClient(BaseClient):
 
         lr = config['learning_rate'] 
         self.set_parameters(parameters)
-        
+
         optimizer = ProxSGD(
             params=self.net.parameters(),
             lr=lr,
@@ -36,7 +36,7 @@ class FedNovaClient(BaseClient):
             self.net,
             self.trainloader,
             criterion,
-            self.optimizer,
+            optimizer,
             config['device'],
             self.num_epochs,
         )

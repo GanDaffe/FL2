@@ -166,4 +166,3 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
         """Set the learning rate to the given value."""
         for param_group in self.param_groups:
             param_group["lr"] = lr
-

@@ -31,7 +31,8 @@ class SCAFFOLD_CLIENT(BaseClient):
         c_global = deserialize_c(c_global_bytes, net)
 
         global_weight = [param.detach().clone() for param in net.parameters()]
-
+        global_weight = [gw.to(device) for gw in global_weight]
+        
         if c_local is None:
             log(INFO, f"No cache found for c_local")
             c_local = [torch.zeros_like(param) for param in net.parameters()]

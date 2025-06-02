@@ -8,10 +8,10 @@ class FedNovaClient(BaseClient):
         super().__init__(*args, **kwargs)
         self.ratio = ratio
         
-    def get_parameters(self, config: Dict[str, Scalar]) -> NDArrays:
+    def get_parameters(self, config: Dict[str, Scalar], optimizer) -> NDArrays:
         params = [
             val["cum_grad"].cpu().numpy()
-            for _, val in self.optimizer.state_dict()["state"].items()
+            for _, val in optimizer.state_dict()["state"].items()
         ]
         return params
 
@@ -51,4 +51,4 @@ class FedNovaClient(BaseClient):
             "weight": grad_scaling_factor["weight"]
         }
 
-        return self.get_parameters({}), len(self.trainloader.sampler), metrics
+        return self.get_parameters({}, optimizer), len(self.trainloader.sampler), metrics

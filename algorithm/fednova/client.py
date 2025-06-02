@@ -1,6 +1,7 @@
 from algorithm.base.client import BaseClient 
 from algorithm.import_lib import *
 from algorithm.fednova.fednova_utils import ProxSGD
+from torch import nn
 
 class FedNovaClient(BaseClient):
     def __init__(self, *args, ratio, **kwargs):
@@ -8,7 +9,6 @@ class FedNovaClient(BaseClient):
         self.ratio = ratio
         
     def get_parameters(self, config: Dict[str, Scalar]) -> NDArrays:
-        """Return the parameters of the current net."""
         params = [
             val["cum_grad"].cpu().numpy()
             for _, val in self.optimizer.state_dict()["state"].items()
@@ -34,11 +34,12 @@ class FedNovaClient(BaseClient):
         lr = config['learning_rate'] 
 
         self.set_parameters(parameters, lr)
-
+        criterion = nn.CrossEntropyLoss()
         train_loss, train_acc = train(
             self.net,
-            self.optimizer,
             self.trainloader,
+            criterion,
+            self.optimizer,
             config['device'],
             self.num_epochs,
         )

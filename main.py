@@ -97,6 +97,22 @@ def get_strategy():
                 num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,
                 current_parameters  = current_parameters,
             )
+    elif ALGO_NAME == 'fednova':
+        state_dict = net_.state_dict()
+        learnable_params = {
+            name: param for name, param in state_dict.items()
+            if "running_mean" not in name and "running_var" not in name and "num_batches_tracked" not in name
+        }
+        init_parameters = ndarrays_to_parameters([param.cpu().numpy() for param in learnable_params.values()])
+        return algo(
+                learning_rate       = LEARNING_RATE,
+                exp_name            = EXP_NAME,
+                algo_name           = ALGO_NAME,
+                device              = DEVICE,
+                num_rounds          = NUM_ROUNDS,
+                num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,
+                current_parameters  = init_parameters,
+            )
     else:
         return algo(
                 learning_rate       = LEARNING_RATE,

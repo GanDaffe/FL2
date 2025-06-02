@@ -68,8 +68,7 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
         for group in self.param_groups:
             group.setdefault("nesterov", False)
 
-    def step(self, closure=None):  # pylint: disable=too-many-branches
-        """Perform a single optimization step."""
+    def step(self, closure=None):  
         for group in self.param_groups:
             weight_decay = group["weight_decay"]
             momentum = group["momentum"]
@@ -86,12 +85,11 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
 
                 param_state = self.state[p]
 
-                # if 'old_init' not in param_state:
-                # 	param_state['old_init'] = torch.clone(p.data).detach()
+                if 'old_init' not in param_state:
+                    param_state["old_init"] = torch.clone(p.data).detach()
 
                 local_lr = group["lr"]
 
-                # apply momentum updates
                 if momentum != 0:
                     if "momentum_buffer" not in param_state:
                         buf = param_state["momentum_buffer"] = torch.clone(d_p).detach()
@@ -103,13 +101,11 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
                     else:
                         d_p = buf
 
-                # apply proximal updates
                 if self.mu != 0:
                     if param_state["old_init"].device != p.device:
                         param_state["old_init"] = param_state["old_init"].to(p.device)
                     d_p.add_(p.data - param_state["old_init"], alpha=self.mu)
 
-                # update accumalated local updates
                 if "cum_grad" not in param_state:
                     param_state["cum_grad"] = torch.clone(d_p).detach()
                     param_state["cum_grad"].mul_(local_lr)
@@ -119,7 +115,6 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
 
                 p.data.add_(d_p, alpha=-local_lr)
 
-        # compute local normalizing vector a_i
         if self.momentum != 0:
             self.local_counter = self.local_counter * self.momentum + 1
             self.local_normalizing_vec += self.local_counter
@@ -152,7 +147,6 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
         return local_stats
 
     def set_model_params(self, init_params: NDArrays):
-        """Set the model parameters to the given values."""
         i = 0
         for group in self.param_groups:
             for p in group["params"]:
@@ -163,7 +157,6 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
                 i += 1
 
     def set_lr(self, lr: float):
-        """Set the learning rate to the given value."""
         for param_group in self.param_groups:
             param_group["lr"] = lr
 

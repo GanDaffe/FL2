@@ -51,8 +51,6 @@ class FedNovaStrategy(FedAvg):
         return ndarrays_to_parameters(self.global_parameters), {}
 
     def update_server_params(self, cum_grad: NDArrays):
-        print(f"Sample global param: {self.global_parameters[i].flatten()[:5]}")
-        print(f"Sample gradient: {layer_cum_grad.flatten()[:5]}")
 
         for i, layer_cum_grad in enumerate(cum_grad):
             global_shape = self.global_parameters[i].shape

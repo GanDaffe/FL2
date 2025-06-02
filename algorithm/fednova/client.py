@@ -9,19 +9,10 @@ class FedNovaClient(BaseClient):
         self.ratio = ratio
         
     def get_parameters(self, config: Dict[str, Scalar]) -> NDArrays:
-        params = []
-
-        for name, param in self.net.named_parameters():
-            state = self.optimizer.state.get(param, {})
-            cum_grad = state.get("cum_grad", None)
-            if cum_grad is not None:
-
-                if cum_grad.shape == param.shape:
-                    params.append(cum_grad.cpu().numpy())
-                else:
-                    print(f"[Warning] Skipping cum_grad for {name} due to shape mismatch: cum_grad {cum_grad.shape} vs param {param.shape}")
-            else:
-                print(f"[Info] No cum_grad found for {name}")
+        params = [
+            val["cum_grad"].cpu().numpy()
+            for _, val in self.optimizer.state_dict()["state"].items()
+        ]
         return params
 
     def set_parameters(self, parameters, lr):
@@ -39,6 +30,7 @@ class FedNovaClient(BaseClient):
                 self.optimizer.state[p]['old_init'] = p.data.clone()
 
     def fit(self, parameters, config):
+
         lr = config['learning_rate'] 
 
         self.set_parameters(parameters, lr)

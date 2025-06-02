@@ -166,3 +166,10 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
         """Set the learning rate to the given value."""
         for param_group in self.param_groups:
             param_group["lr"] = lr
+
+def get_bn_param_indices(self, model_state_dict):
+    bn_indices = []
+    for idx, key in enumerate(model_state_dict.keys()):
+        if "bn" in key.lower() or "batchnorm" in key.lower():
+            bn_indices.append(idx)
+    return bn_indices

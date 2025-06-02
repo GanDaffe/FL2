@@ -1,6 +1,7 @@
 from logging import INFO, log
 from algorithm.import_lib import *
 from algorithm.base.strategy import FedAvg
+from algorithm.fednova.fednova_utils import get_bn_param_indices
 
 class FedNovaStrategy(FedAvg):
     def __init__(self, gmf = 0, *args, **kwargs):
@@ -26,7 +27,9 @@ class FedNovaStrategy(FedAvg):
         aggregate_parameters = []
         for _, fit_res in results:
             params = parameters_to_ndarrays(fit_res.parameters)
-            scale = tau_eff / float(fit_res.metrics["local_norm"]) * float(fit_res.metrics["weight"])
+            scale = tau_eff / float(fit_res.metrics["local_norm"])
+            scale *= float(fit_res.metrics["weight"])
+
             aggregate_parameters.append((params, scale))
 
 
@@ -50,17 +53,22 @@ class FedNovaStrategy(FedAvg):
     def update_server_params(self, cum_grad: NDArrays):
         for i, layer_cum_grad in enumerate(cum_grad):
             if self.gmf != 0:
-          
+                # check if it's the first round of aggregation, if so, initialize the
+                # global momentum buffer
+
                 if len(self.global_momentum_buffer) < len(cum_grad):
                     buf = layer_cum_grad / self.lr
                     self.global_momentum_buffer.append(buf)
 
                 else:
-  
+                    # momentum updates using the global accumulated weights buffer
+                    # for each layer of network
                     self.global_momentum_buffer[i] *= self.gmf
                     self.global_momentum_buffer[i] += layer_cum_grad / self.lr
 
                 self.global_parameters[i] -= self.global_momentum_buffer[i] * self.lr
 
             else:
+                # weight updated eqn: x_new = x_old - gradient
+                # the layer_cum_grad already has all the learning rate multiple
                 self.global_parameters[i] -= layer_cum_grad

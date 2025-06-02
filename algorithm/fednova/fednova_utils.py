@@ -130,10 +130,6 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
         self.local_steps += 1
 
     def get_gradient_scaling(self) -> Dict[str, float]:
-        """Compute the scaling factor for local client gradients.
-
-        Returns: A dictionary containing weight, tau, and local_norm.
-        """
         if self.mu != 0:
             local_tau = torch.tensor(self.local_steps * self.ratio)
         else:

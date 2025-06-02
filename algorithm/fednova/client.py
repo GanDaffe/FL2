@@ -14,10 +14,11 @@ class FedNovaClient(BaseClient):
         )
         
     def get_parameters(self, config: Dict[str, Scalar]) -> NDArrays:
-        params = [
-            val["cum_grad"].cpu().numpy()
-            for _, val in self.optimizer.state_dict()["state"].items()
-        ]
+        params = []
+        for name, param in self.net.named_parameters():
+            state = self.optimizer.state[param]
+            if "cum_grad" in state:
+                params.append(state["cum_grad"].cpu().numpy())
         return params
 
     def set_parameters(self, parameters):

@@ -10,7 +10,7 @@ class FedNovaClient(BaseClient):
         
     def get_parameters(self, config: Dict[str, Scalar], optimizer) -> NDArrays:
         params = [
-            val["cum_grad"].cpu().numpy()
+            val["cum_grad"].detach().cpu().numpy()
             for _, val in optimizer.state_dict()["state"].items()
         ]
         return params

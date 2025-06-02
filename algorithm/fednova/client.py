@@ -7,6 +7,11 @@ class FedNovaClient(BaseClient):
     def __init__(self, *args, ratio, **kwargs):
         super().__init__(*args, **kwargs)
         self.ratio = ratio
+        self.optimizer = ProxSGD(
+            params=None,
+            lr=1,
+            ratio=self.ratio
+        )
         
     def get_parameters(self, config: Dict[str, Scalar]) -> NDArrays:
         params = [
@@ -15,25 +20,15 @@ class FedNovaClient(BaseClient):
         ]
         return params
 
-    def set_parameters(self, parameters, lr):
-        state_dict = {name: torch.tensor(param) for name, param in zip(self.net.state_dict().keys(), parameters)}
-        self.net.load_state_dict(state_dict)
-
-        self.optimizer = ProxSGD(
-            params=self.net.parameters(),
-            lr=lr,
-            ratio=self.ratio
-        )
-  
-        for group in self.optimizer.param_groups:
-            for p in group['params']:
-                self.optimizer.state[p]['old_init'] = p.data.clone()
+    def set_parameters(self, parameters):
+        self.optimizer.set_model_params(parameters)
 
     def fit(self, parameters, config):
 
         lr = config['learning_rate'] 
-
-        self.set_parameters(parameters, lr)
+        self.set_parameters(parameters)
+        self.optimizer.set_lr(lr)
+        
         criterion = nn.CrossEntropyLoss()
         train_loss, train_acc = train(
             self.net,

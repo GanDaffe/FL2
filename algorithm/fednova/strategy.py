@@ -25,6 +25,7 @@ class FedNovaStrategy(FedAvg):
         tau_eff = np.sum(local_tau)
 
         aggregate_parameters = []
+        
         for _, fit_res in results:
             params = parameters_to_ndarrays(fit_res.parameters)
             scale = tau_eff / float(fit_res.metrics["local_norm"])

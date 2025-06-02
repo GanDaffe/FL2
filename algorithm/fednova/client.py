@@ -8,7 +8,7 @@ class FedNovaClient(BaseClient):
         super().__init__(*args, **kwargs)
         self.ratio = ratio
         self.optimizer = ProxSGD(
-            params=None,
+            params=self.net.parameters(),
             lr=1,
             ratio=self.ratio
         )
@@ -28,7 +28,7 @@ class FedNovaClient(BaseClient):
         lr = config['learning_rate'] 
         self.set_parameters(parameters)
         self.optimizer.set_lr(lr)
-        
+
         criterion = nn.CrossEntropyLoss()
         train_loss, train_acc = train(
             self.net,

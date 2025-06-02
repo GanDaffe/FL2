@@ -9,9 +9,11 @@ class FedNovaStrategy(FedAvg):
         self.gmf = gmf
         self.global_momentum_buffer = []
         if self.current_parameters is not None:
-            self.global_parameters = parameters_to_ndarrays(
-                self.current_parameters
-            )
+            state_dict = self.current_parameters  
+            self.global_parameters = [
+                param.cpu().numpy() for name, param in state_dict.items()
+                if "running_mean" not in name and "running_var" not in name and "num_batches_tracked" not in name
+            ]
 
     def aggregate_fit(
         self,
@@ -50,21 +52,24 @@ class FedNovaStrategy(FedAvg):
 
         return ndarrays_to_parameters(self.global_parameters), {}
 
-    def update_server_params(self, cum_grad: NDArrays):
+    def update_server_params(self, cum_grad: List[np.ndarray]):
         for i, layer_cum_grad in enumerate(cum_grad):
             global_param = self.global_parameters[i]
             global_shape = global_param.shape
             grad_shape = layer_cum_grad.shape
 
-            # In thông tin cơ bản về lớp
             print(f"\n[Update Param] Layer {i}")
             print(f"  Global Param Shape: {global_shape} | Gradient Shape: {grad_shape}")
             print(f"  Global Param dtype: {global_param.dtype} | Grad dtype: {layer_cum_grad.dtype}")
             print(f"  Global Param min: {global_param.min():.6f}, max: {global_param.max():.6f}")
             print(f"  Gradient min: {layer_cum_grad.min():.6f}, max: {layer_cum_grad.max():.6f}")
 
+            if global_shape != grad_shape:
+                print(f"[ERROR] Shape mismatch at layer {i}: global shape {global_shape}, grad shape {grad_shape}")
+                continue  
+
             if self.gmf != 0:
-                if len(self.global_momentum_buffer) < len(cum_grad):
+                if len(self.global_momentum_buffer) <= i:
                     buf = layer_cum_grad / self.lr
                     self.global_momentum_buffer.append(buf)
                     print(f"  [Init Momentum] Buffer initialized for Layer {i}")
@@ -72,20 +77,8 @@ class FedNovaStrategy(FedAvg):
                     self.global_momentum_buffer[i] *= self.gmf
                     self.global_momentum_buffer[i] += layer_cum_grad / self.lr
                     print(f"  [Momentum Update] gmf={self.gmf}, lr={self.lr:.6f}")
-
-                try:
-                    self.global_parameters[i] -= self.global_momentum_buffer[i] * self.lr
-                    print(f"  [Param Updated] with momentum")
-                except ValueError as e:
-                    print(f"[ERROR] Broadcast error at layer {i}: {e}")
-                    print(f"  -> global shape: {global_param.shape}, grad shape: {self.global_momentum_buffer[i].shape}")
-                    raise
-
+                self.global_parameters[i] -= self.global_momentum_buffer[i] * self.lr
+                print(f"  [Param Updated] with momentum")
             else:
-                try:
-                    self.global_parameters[i] -= layer_cum_grad
-                    print(f"  [Param Updated] without momentum")
-                except ValueError as e:
-                    print(f"[ERROR] Broadcast error at layer {i}: {e}")
-                    print(f"  -> global shape: {global_param.shape}, grad shape: {layer_cum_grad.shape}")
-                    raise
+                self.global_parameters[i] -= layer_cum_grad
+                print(f"  [Param Updated] without momentum")

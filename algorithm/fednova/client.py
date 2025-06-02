@@ -12,13 +12,22 @@ class FedNovaClient(BaseClient):
         params = [
             val["cum_grad"].cpu().numpy()
             for _, val in optimizer.state_dict()["state"].items()
+            if "cum_grad" in val
         ]
         return params
 
     def set_parameters(self, parameters):
-        params_dict = zip(self.net.state_dict().keys(), parameters)
-        state_dict = OrderedDict({k: torch.from_numpy(np.copy(v)) for k, v in params_dict})
-        self.net.load_state_dict(state_dict, strict=True)
+        state_dict = self.net.state_dict()
+        param_names = [
+            name for name in state_dict.keys()
+            if "running_mean" not in name and "running_var" not in name and "num_batches_tracked" not in name
+        ]
+        params_dict = zip(param_names, parameters)
+        new_state_dict = OrderedDict(
+            {k: torch.from_numpy(np.copy(v)) for k, v in params_dict}
+        )
+        state_dict.update(new_state_dict)
+        self.net.load_state_dict(state_dict, strict=False)
 
     def fit(self, parameters, config):
 

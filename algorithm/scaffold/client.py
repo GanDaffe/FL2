@@ -32,11 +32,14 @@ class SCAFFOLD_CLIENT(BaseClient):
 
         global_weight = [param.detach().clone() for param in net.parameters()]
         global_weight = [gw.to(device) for gw in global_weight]
-        
+
         if c_local is None:
             log(INFO, f"No cache found for c_local")
             c_local = [torch.zeros_like(param) for param in net.parameters()]
-        
+
+        c_local = [c.to(device) for c in c_local]
+        c_global = [cg.to(device) for cg in c_global]      
+
         net.to(device)
         net.train()
 
@@ -62,8 +65,6 @@ class SCAFFOLD_CLIENT(BaseClient):
                 for param, y_i, c_l, c_g in zip(net.parameters(), prebatch_params, c_local, c_global):
                     if param.requires_grad and param.grad is not None:
                         y_i = y_i.to(device)
-                        c_l = c_l.to(device)
-                        c_g = c_g.to(device)
                         param.grad.data = y_i - (learning_rate * (param.grad.data - c_l + c_g))
 
                 self.optimizer.step()

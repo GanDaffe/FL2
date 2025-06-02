@@ -10,14 +10,14 @@ class FedNovaClient(BaseClient):
         
     def get_parameters(self, config: Dict[str, Scalar], optimizer) -> NDArrays:
         params = [
-            val["cum_grad"].detach().cpu().numpy()
+            val["cum_grad"].cpu().numpy()
             for _, val in optimizer.state_dict()["state"].items()
         ]
         return params
 
     def set_parameters(self, parameters):
         params_dict = zip(self.net.state_dict().keys(), parameters)
-        state_dict = OrderedDict({k: torch.from_numpy(v) for k, v in params_dict})
+        state_dict = OrderedDict({k: torch.from_numpy(np.copy(v)) for k, v in params_dict})
         self.net.load_state_dict(state_dict, strict=True)
 
     def fit(self, parameters, config):

@@ -24,7 +24,7 @@ class FedNovaClient(BaseClient):
         params_dict = zip(self.net.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.from_numpy(v) for k, v in params_dict})
         self.net.load_state_dict(state_dict, strict=True)
-        self.optimizer.set_model_params(self.net.parameters())
+        self.optimizer.set_model_params(parameters_to_ndarrays(self.net.parameters()))
 
     def fit(self, parameters, config):
 

@@ -41,7 +41,7 @@ class FedNovaClient(BaseClient):
             self.num_epochs,
         )
 
-        grad_scaling_factor = self.optimizer.get_gradient_scaling()
+        grad_scaling_factor = optimizer.get_gradient_scaling()
 
         metrics = {
             "accuracy": train_acc,

@@ -85,8 +85,8 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
 
                 param_state = self.state[p]
 
-                if 'old_init' not in param_state:
-                    param_state["old_init"] = torch.clone(p.data).detach()
+                # if 'old_init' not in param_state:
+                #     param_state["old_init"] = torch.clone(p.data).detach()
 
                 local_lr = group["lr"]
 
@@ -141,10 +141,3 @@ class ProxSGD(torch.optim.Optimizer):  # pylint: disable=too-many-instance-attri
         }
 
         return local_stats
-
-def get_bn_param_indices(self, model_state_dict):
-    bn_indices = []
-    for idx, key in enumerate(model_state_dict.keys()):
-        if "bn" in key.lower() or "batchnorm" in key.lower():
-            bn_indices.append(idx)
-    return bn_indices

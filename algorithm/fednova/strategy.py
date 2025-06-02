@@ -56,27 +56,16 @@ class FedNovaStrategy(FedAvg):
             global_shape = global_param.shape
             grad_shape = layer_cum_grad.shape
 
-            print(f"\n[Update Param] Layer {i}")
-            print(f"  Global Param Shape: {global_shape} | Gradient Shape: {grad_shape}")
-            print(f"  Global Param dtype: {global_param.dtype} | Grad dtype: {layer_cum_grad.dtype}")
-            print(f"  Global Param min: {global_param.min():.6f}, max: {global_param.max():.6f}")
-            print(f"  Gradient min: {layer_cum_grad.min():.6f}, max: {layer_cum_grad.max():.6f}")
-
             if global_shape != grad_shape:
-                print(f"[ERROR] Shape mismatch at layer {i}: global shape {global_shape}, grad shape {grad_shape}")
-                continue  
-
+                print(f"[ERROR] Shape mismatch at layer {i}: global shape {global_shape}, grad shape {grad_shape}")  
+                break 
             if self.gmf != 0:
                 if len(self.global_momentum_buffer) <= i:
                     buf = layer_cum_grad / self.lr
                     self.global_momentum_buffer.append(buf)
-                    print(f"  [Init Momentum] Buffer initialized for Layer {i}")
                 else:
                     self.global_momentum_buffer[i] *= self.gmf
                     self.global_momentum_buffer[i] += layer_cum_grad / self.lr
-                    print(f"  [Momentum Update] gmf={self.gmf}, lr={self.lr:.6f}")
                 self.global_parameters[i] -= self.global_momentum_buffer[i] * self.lr
-                print(f"  [Param Updated] with momentum")
             else:
                 self.global_parameters[i] -= layer_cum_grad
-                print(f"  [Param Updated] without momentum")

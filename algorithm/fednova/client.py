@@ -63,7 +63,7 @@ class FedNovaClient(BaseClient):
         return self.get_parameters({}, optimizer), len(self.trainloader.sampler), metrics
 
     def evaluate(self, parameters, config):
-        self.set_parameters(self.net, parameters)
+        self.set_parameters(parameters)
         loss, acc, prec, rec, f1, TP, FP, FN, TN = test(self.net, self.valloader, config["device"])
         return loss, len(self.valloader.sampler), {
             "accuracy": acc,

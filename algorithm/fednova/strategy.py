@@ -9,11 +9,9 @@ class FedNovaStrategy(FedAvg):
         self.gmf = gmf
         self.global_momentum_buffer = []
         if self.current_parameters is not None:
-            state_dict = self.current_parameters  
-            self.global_parameters = [
-                param.cpu().numpy() for name, param in state_dict.items()
-                if "running_mean" not in name and "running_var" not in name and "num_batches_tracked" not in name
-            ]
+            self.global_parameters = parameters_to_ndarrays(
+                self.current_parameters
+            )
 
     def aggregate_fit(
         self,

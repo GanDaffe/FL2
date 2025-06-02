@@ -21,10 +21,10 @@ class FedNovaClient(BaseClient):
         return params
 
     def set_parameters(self, parameters):
-        for param, new_param in zip(self.net.parameters(), parameters):
-            param.data.copy_(torch.tensor(new_param).to(param.device))
-        self.optimizer.set_model_params(parameters)
-
+        params_dict = zip(self.net.state_dict().keys(), parameters)
+        state_dict = OrderedDict({k: torch.from_numpy(v).detach.clone() for k, v in params_dict})
+        self.net.load_state_dict(state_dict, strict=True)
+        self.optimizer.set_model_params(self.net.parameters())
 
     def fit(self, parameters, config):
 

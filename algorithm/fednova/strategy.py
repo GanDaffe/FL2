@@ -51,29 +51,41 @@ class FedNovaStrategy(FedAvg):
         return ndarrays_to_parameters(self.global_parameters), {}
 
     def update_server_params(self, cum_grad: NDArrays):
-
         for i, layer_cum_grad in enumerate(cum_grad):
-            global_shape = self.global_parameters[i].shape
+            global_param = self.global_parameters[i]
+            global_shape = global_param.shape
             grad_shape = layer_cum_grad.shape
-            print(f"[Update Param] Layer {i} | Global Param Shape: {global_shape} | Gradient Shape: {grad_shape}")
+
+            # In thông tin cơ bản về lớp
+            print(f"\n[Update Param] Layer {i}")
+            print(f"  Global Param Shape: {global_shape} | Gradient Shape: {grad_shape}")
+            print(f"  Global Param dtype: {global_param.dtype} | Grad dtype: {layer_cum_grad.dtype}")
+            print(f"  Global Param min: {global_param.min():.6f}, max: {global_param.max():.6f}")
+            print(f"  Gradient min: {layer_cum_grad.min():.6f}, max: {layer_cum_grad.max():.6f}")
 
             if self.gmf != 0:
                 if len(self.global_momentum_buffer) < len(cum_grad):
                     buf = layer_cum_grad / self.lr
                     self.global_momentum_buffer.append(buf)
+                    print(f"  [Init Momentum] Buffer initialized for Layer {i}")
                 else:
                     self.global_momentum_buffer[i] *= self.gmf
                     self.global_momentum_buffer[i] += layer_cum_grad / self.lr
+                    print(f"  [Momentum Update] gmf={self.gmf}, lr={self.lr:.6f}")
 
                 try:
                     self.global_parameters[i] -= self.global_momentum_buffer[i] * self.lr
+                    print(f"  [Param Updated] with momentum")
                 except ValueError as e:
                     print(f"[ERROR] Broadcast error at layer {i}: {e}")
+                    print(f"  -> global shape: {global_param.shape}, grad shape: {self.global_momentum_buffer[i].shape}")
                     raise
 
             else:
                 try:
                     self.global_parameters[i] -= layer_cum_grad
+                    print(f"  [Param Updated] without momentum")
                 except ValueError as e:
                     print(f"[ERROR] Broadcast error at layer {i}: {e}")
+                    print(f"  -> global shape: {global_param.shape}, grad shape: {layer_cum_grad.shape}")
                     raise

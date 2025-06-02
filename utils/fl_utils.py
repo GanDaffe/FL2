@@ -116,5 +116,5 @@ def test(net, testloader, device):
     FN_ = int(FN.sum())
     TN_ = int(TN.sum())
 
-    return total_loss, accuracy, precision, recall, f1, TP_, TP_, TP_, TN_
+    return total_loss, accuracy, precision, recall, f1, TP_, FP_, FN_, TN_
 

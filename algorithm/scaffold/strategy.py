@@ -16,7 +16,10 @@ class SCAFFOLD(FedAvg):
         self.current_weights = [w.astype(np.float32) for w in parameters_to_ndarrays(self.current_parameters)]
         self.num_clients = self.num_clients
         self.global_learning_rate = self.learning_rate
-
+    
+    def initialize_parameters(self, client_manager):
+        return ndarrays_to_parameters(self.current_weights)
+    
     def __repr__(self) -> str:
         return 'SCAFFOLD'
 
@@ -66,5 +69,5 @@ class SCAFFOLD(FedAvg):
             c_delta_avg = c_delta_sum[i] / self.num_clients
             self.c_global[i] += torch.tensor(c_delta_avg, device=self.c_global[i].device)
             
-        return ndarrays_to_parameters(self.current_weights), metrics_aggregated
+        return ndarrays_to_parameters(self.current_weights), {}
     

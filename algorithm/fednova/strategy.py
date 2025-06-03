@@ -12,7 +12,10 @@ class FedNovaStrategy(FedAvg):
             self.global_parameters = parameters_to_ndarrays(
                 self.current_parameters
             )
-
+    
+    def initialize_parameters(self, client_manager):
+        return ndarrays_to_parameters(self.global_parameters)
+    
     def aggregate_fit(
         self,
         server_round: int,

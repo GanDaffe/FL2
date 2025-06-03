@@ -69,7 +69,7 @@ class SCAFFOLD_CLIENT(BaseClient):
                 
                 for param, y_i, c_l, c_g in zip(net.parameters(), prebatch_params, c_local, c_global):
                     if param.requires_grad:
-                        param.grad.data = y_i - (learning_rate * (param.grad.data - c_l.to(device) + c_g.to(device)))
+                        param.grad.data = y_i - (learning_rate * (param.grad.data - c_l + c_g.to(device)))
 
             y_delta = [param.detach().clone() - gw for param, gw in zip(net.parameters(), global_weight)]
 

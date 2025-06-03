@@ -15,10 +15,11 @@ def load_c_local(partition_id: int):
     else:
         return None
 
-# Custom function to serialize to bytes and save c_local variable inside a file
 def set_c_local(partition_id: int, c_local):
     path = "c_local_folder/" + str(partition_id) +".txt"
 
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
     c_local_list = []
     for param in c_local:
         c_local_list += param.flatten().tolist()

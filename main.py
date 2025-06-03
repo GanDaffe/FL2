@@ -81,6 +81,7 @@ def base_client_fn(cid: str):
 
 
 net_ = init_model() if ALGO_NAME == 'moon' else BN_CNN(in_channel=1, num_classes=3) 
+net_.to(DEVICE)
 current_parameters = ndarrays_to_parameters(get_parameters(net_))
 client_resources = {"num_cpus": 1, "num_gpus": 0.2} if DEVICE == "cuda" else {"num_cpus": 1, "num_gpus": 0.0}
 

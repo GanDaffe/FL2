@@ -16,8 +16,8 @@ class FedNovaClient(BaseClient):
         ]
         return params
 
-    def set_parameters(self, parameters):
-        state_dict = self.net.state_dict()
+    def set_parameters(self, model, parameters):
+        state_dict = model.state_dict()
         param_names = [
             name for name in state_dict.keys()
             if "running_mean" not in name and "running_var" not in name and "num_batches_tracked" not in name
@@ -27,12 +27,12 @@ class FedNovaClient(BaseClient):
             {k: torch.from_numpy(np.copy(v)) for k, v in params_dict}
         )
         state_dict.update(new_state_dict)
-        self.net.load_state_dict(state_dict, strict=False)
+        model.load_state_dict(state_dict, strict=False)
 
     def fit(self, parameters, config):
 
         lr = config['learning_rate'] 
-        self.set_parameters(parameters)
+        self.set_parameters(self.net, parameters)
 
         optimizer = ProxSGD(
             params=self.net.parameters(),
@@ -63,7 +63,7 @@ class FedNovaClient(BaseClient):
         return self.get_parameters({}, optimizer), len(self.trainloader.sampler), metrics
 
     def evaluate(self, parameters, config):
-        self.set_parameters(parameters)
+        self.set_parameters(self.net, parameters)
         loss, acc, prec, rec, f1, TP, FP, FN, TN = test(self.net, self.valloader, config["device"])
         return loss, len(self.valloader.sampler), {
             "accuracy": acc,

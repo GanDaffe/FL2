@@ -35,10 +35,7 @@ class SCAFFOLD_CLIENT(BaseClient):
 
         if c_local is None:
             log(INFO, f"No cache found for c_local")
-            c_local = [torch.zeros_like(param) for param in net.parameters()]
-
-        c_local = [c.to(device) for c in c_local]
-        c_global = [cg.to(device) for cg in c_global]      
+            c_local = [torch.zeros_like(param) for param in net.parameters()]      
 
         net.to(device)
         net.train()

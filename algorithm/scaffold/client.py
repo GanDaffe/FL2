@@ -61,7 +61,7 @@ class SCAFFOLD_CLIENT(BaseClient):
                 self.optimizer.step()
                 for param, y_i, c_l, c_g in zip(net.parameters(), prebatch_params, c_local, c_global):
                     if param.requires_grad and param.grad is not None:
-                        # y_i = y_i.to(device)
+                        y_i = y_i.to('cpu')
                         param.grad.data = y_i - (learning_rate * (param.grad.data - c_l + c_g))
 
                

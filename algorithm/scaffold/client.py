@@ -28,12 +28,21 @@ class SCAFFOLD_CLIENT(BaseClient):
     
     def train_scaffold(self, net, trainloader, epochs, learning_rate, device, config, c_local, parameters):
         c_global_bytes = config['c_global']
-        c_global = np.frombuffer(c_global_bytes, dtype=np.float64)
+        c_global_np = np.frombuffer(c_global_bytes, dtype=np.float64)
+        
+        c_global = []
+        idx = 0
+        for param in net.parameters():
+            param_size = param.numel() 
+            param_shape = param.shape  
+            c_global_param = torch.from_numpy(c_global_np[idx:idx + param_size]).reshape(param_shape).to(device)
+            c_global.append(c_global_param)
+            idx += param_size
 
         global_weight = [param.detach().clone() for param in net.parameters()]
         if c_local is None:
             log(INFO, f"No cache found for c_local")
-            c_local = [torch.zeros_like(param) for param in net.parameters()]      
+            c_local = [torch.zeros_like(param, device=device) for param in net.parameters()]      
 
         net.to(device)
         net.train()
@@ -57,38 +66,38 @@ class SCAFFOLD_CLIENT(BaseClient):
 
                 loss.backward()
                 self.optimizer.step()
+                
+                # Ensure all tensors are on the same device
                 for param, y_i, c_l, c_g in zip(net.parameters(), prebatch_params, c_local, c_global):
                     if param.requires_grad:
-                        param.grad.data = y_i - (learning_rate * (param.grad.data - c_l + c_g))
+                        param.grad.data = y_i - (learning_rate * (param.grad.data - c_l.to(device) + c_g.to(device)))
 
-               
+            y_delta = [param.detach().clone() - gw for param, gw in zip(net.parameters(), global_weight)]
 
-        y_delta = [param.detach().clone() - gw for param, gw in zip(net.parameters(), global_weight)]
+            coef = 1 / (epochs * learning_rate)
+            c_plus = [
+                c_l - c_g + coef * (param_g - param_l)
+                for c_l, c_g, param_l, param_g in zip(c_local, c_global, net.parameters(), global_weight)
+            ]
 
-        coef = 1 / (epochs * learning_rate)
-        c_plus = [
-            c_l - c_g + coef * (param_g - param_l)
-            for c_l, c_g, param_l, param_g in zip(c_local, c_global, net.parameters(), global_weight)
-        ]
+            for param, new_w in zip(net.parameters(), y_delta):
+                param.data = new_w.clone().detach()
 
-        for param, new_w in zip(net.parameters(), y_delta):
-            param.data = new_w.clone().detach()
+            c_delta = [cp - cl for cp, cl in zip(c_plus, c_local)]
 
-        c_delta = [cp - cl for cp, cl in zip(c_plus, c_local)]
+            set_c_local(self.cid, c_plus)
 
-        set_c_local(self.cid, c_plus)
+            c_delta_list = []
+            for param in c_delta:
+                c_delta_list += param.flatten().tolist()
+                
+            c_delta_numpy = np.array(c_delta_list, dtype=np.float64)
+            c_delta_bytes = c_delta_numpy.tobytes()
 
-        c_delta_list = []
-        for param in c_delta:
-            c_delta_list += param.flatten().tolist()
-            
-        c_delta_numpy = np.array(c_delta_list, dtype=np.float64)
-        c_delta_bytes = c_delta_numpy.tobytes()
-
-        results = {
-            "loss": loss_avg / tot_sample,
-            "accuracy": running_corrects / tot_sample,
-            "c_delta": c_delta_bytes,
-        }
-        return results
-    
+            results = {
+                "loss": loss_avg / tot_sample,
+                "accuracy": running_corrects / tot_sample,
+                "c_delta": c_delta_bytes,
+            }
+            return results
+        

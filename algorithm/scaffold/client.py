@@ -28,7 +28,7 @@ class SCAFFOLD_CLIENT(BaseClient):
     
     def train_scaffold(self, net, trainloader, epochs, learning_rate, device, config, c_local, parameters):
         c_global_bytes = config['c_global']
-        c_global_np = np.frombuffer(c_global_bytes, dtype=np.float64)
+        c_global_np = np.frombuffer(c_global_bytes, dtype=np.float64).copy() 
         
         c_global = []
         idx = 0
@@ -39,7 +39,7 @@ class SCAFFOLD_CLIENT(BaseClient):
             c_global.append(c_global_param)
             idx += param_size
 
-        global_weight = [param.detach().clone() for param in net.parameters()]
+        global_weight = [param.detach().clone().to(device) for param in net.parameters()]
         if c_local is None:
             log(INFO, f"No cache found for c_local")
             c_local = [torch.zeros_like(param, device=device) for param in net.parameters()]      
@@ -67,7 +67,6 @@ class SCAFFOLD_CLIENT(BaseClient):
                 loss.backward()
                 self.optimizer.step()
                 
-                # Ensure all tensors are on the same device
                 for param, y_i, c_l, c_g in zip(net.parameters(), prebatch_params, c_local, c_global):
                     if param.requires_grad:
                         param.grad.data = y_i - (learning_rate * (param.grad.data - c_l.to(device) + c_g.to(device)))

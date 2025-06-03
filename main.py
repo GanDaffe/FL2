@@ -86,13 +86,12 @@ client_resources = {"num_cpus": 1, "num_gpus": 0.2} if DEVICE == "cuda" else {"n
 
 def get_strategy(): 
     if ALGO_NAME == 'scaffold': 
-        c_global = [torch.zeros_like(param) for param in net_.parameters()]
         return algo(
                 learning_rate       = LEARNING_RATE,
                 exp_name            = EXP_NAME,
                 algo_name           = ALGO_NAME,
                 device              = DEVICE,
-                c_global            = c_global,
+                net                 = net_,
                 num_rounds          = NUM_ROUNDS,
                 num_clients         = NUM_DOMAINS * NUM_CLIENTS_PER_DOMAIN,
                 current_parameters  = current_parameters,

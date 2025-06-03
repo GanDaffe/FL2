@@ -6,12 +6,13 @@ class SCAFFOLD(FedAvg):
     def __init__(
         self,
         *args,
-        c_global,
+        net,
         **kwargs, 
     ) -> None:
         super().__init__(*args, **kwargs) 
 
-        self.c_global = c_global
+        self.net = net 
+        self.c_global = [torch.zeros_like(param) for param in net.parameters()]
         self.current_weights = parameters_to_ndarrays(self.current_parameters)
         self.num_clients = self.num_clients
         self.global_learning_rate = self.learning_rate
@@ -33,8 +34,9 @@ class SCAFFOLD(FedAvg):
             
         global_c_numpy = np.array(c_global, dtype=np.float64)
         global_c_bytes = global_c_numpy.tobytes()
-        config = {"learning_rate": self.learning_rate, "device": self.device, "c_global": global_c_bytes}
-        self.learning_rate *= self.decay_rate
+        config = {"learning_rate": self.global_learning_rate, "device": self.device, "c_global": global_c_bytes}
+        self.global_learning_rate = self.global_learning_rate * self.decay_rate
+
 
         return [(client, FitIns(parameters, config)) for client in clients]
 
@@ -53,7 +55,6 @@ class SCAFFOLD(FedAvg):
         for current_weight, fed_weight in zip(self.current_weights, fedavg_weights_aggregate):
             current_weight += fed_weight * self.global_learning_rate
             
-        self.global_learning_rate = self.global_learning_rate * self.decay_rate
         c_delta_sum = [np.zeros_like(c_global.cpu()) for c_global in self.c_global]
 
         for _, fit_res in results:

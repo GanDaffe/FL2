@@ -73,7 +73,7 @@ def base_client_fn(cid: str):
         net_moon = init_model() 
         return MoonClient(cid, net_moon, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS, dir='/moon_cp/moon_models').to_client()
     elif ALGO_NAME == 'scaffold': 
-        c_local = load_c_local(idx, net)
+        c_local = load_c_local(idx)
         return SCAFFOLD_CLIENT(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS, c_local=c_local).to_client()  
     elif ALGO_NAME == 'fedprox': 
         return FedProxClient(cid, net, trainloaders[idx], valloaders[idx], criterion, num_epochs=NUM_EPOCHS).to_client()

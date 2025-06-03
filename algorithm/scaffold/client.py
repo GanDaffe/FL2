@@ -1,7 +1,7 @@
 from algorithm.base.client import BaseClient 
 from utils import set_parameters
 from algorithm.import_lib import *
-from algorithm.scaffold.scaffold_utils import set_c_local, deserialize_c, serialize_c
+from algorithm.scaffold.scaffold_utils import set_c_local
 from logging import INFO, log
 
 class SCAFFOLD_CLIENT(BaseClient):
@@ -28,7 +28,7 @@ class SCAFFOLD_CLIENT(BaseClient):
     
     def train_scaffold(self, net, trainloader, epochs, learning_rate, device, config, c_local, parameters):
         c_global_bytes = config['c_global']
-        c_global = deserialize_c(c_global_bytes, net)
+        c_global = np.frombuffer(c_global_bytes, dtype=np.float64)
 
         global_weight = [param.detach().clone() for param in net.parameters()]
         global_weight = [gw.to(device) for gw in global_weight]
@@ -61,13 +61,13 @@ class SCAFFOLD_CLIENT(BaseClient):
                 tot_sample += images.shape[0]
 
                 loss.backward()
-
+                self.optimizer.step()
                 for param, y_i, c_l, c_g in zip(net.parameters(), prebatch_params, c_local, c_global):
                     if param.requires_grad and param.grad is not None:
-                        y_i = y_i.to(device)
+                        # y_i = y_i.to(device)
                         param.grad.data = y_i - (learning_rate * (param.grad.data - c_l + c_g))
 
-                self.optimizer.step()
+               
 
         y_delta = [param.detach().clone() - gw for param, gw in zip(net.parameters(), global_weight)]
 
@@ -84,7 +84,12 @@ class SCAFFOLD_CLIENT(BaseClient):
 
         set_c_local(self.cid, c_plus)
 
-        c_delta_bytes = serialize_c(c_delta)
+        c_delta_list = []
+        for param in c_delta:
+            c_delta_list += param.flatten().tolist()
+            
+        c_delta_numpy = np.array(c_delta_list, dtype=np.float64)
+        c_delta_bytes = c_delta_numpy.tobytes()
 
         results = {
             "loss": loss_avg / tot_sample,

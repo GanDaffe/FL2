@@ -69,6 +69,7 @@ class FedNovaClient(BaseClient):
             "accuracy": acc,
             "precision": prec,
             "recall": rec,
+            "domain_id": self.domain_id,
             "f1": f1, 
             "TP": TP, 
             "FP": FP, 

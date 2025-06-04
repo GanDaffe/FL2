@@ -99,7 +99,7 @@ class FedAvg(fl.server.strategy.Strategy):
             acc_domain = sum([f.num_examples * f.metrics["accuracy"] for f in clients]) / tot_domain
 
             acc_per_domain[domain_id] = acc_domain
-            print(f"Domain {domain_id} R{server_round}: acc={acc:.4f}")
+            print(f"Domain {domain_id} R{server_round}: acc={acc_domain:.4f}")
 
         loss = sum(r.num_examples * r.loss for _, r in results) / total
         acc = weighted_avg("accuracy")

@@ -30,7 +30,7 @@ class FedNovaStrategy(FedAvg):
         
         for _, fit_res in results:
             params = parameters_to_ndarrays(fit_res.parameters)
-            scale = tau_eff / float(fit_res.metrics["local_norm"])
+            scale = tau_eff / float(fit_res.metrics["local_norm"]) 
             scale *= float(fit_res.metrics["weight"])
 
             aggregate_parameters.append((params, scale))

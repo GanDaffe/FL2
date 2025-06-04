@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 from collections import OrderedDict
 from typing import List
-from sklearn.model_selection import train_test_split
 import copy
 from torch import nn
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score

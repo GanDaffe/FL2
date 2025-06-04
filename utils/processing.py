@@ -35,7 +35,7 @@ def domain_partition(X, y, num_clients):
     client_indices = [[] for _ in range(num_clients)]
 
     for c in range(num_classes):
-        proportions = np.random.dirichlet(np.ones(num_clients) * 5)
+        proportions = np.random.dirichlet(np.ones(num_clients) * 2)
         indices = np.array(class_indices[c])
         np.random.shuffle(indices)
 
@@ -72,11 +72,22 @@ def get_clients_dataset(full_domain_data, num_domains, num_clients_per_domain):
         all_data.append(data_processing(domain, 256))
 
     domain_clients = []
-    for data, label in all_data:  
-        domain_clients.extend(domain_partition(data, label, num_clients_per_domain))
+    client_domain_mapper = {}
+    cnt = 0 
+
+    for i in range(num_domains): 
+
+        data, label = all_data[i] 
+        c_d = domain_partition(data, label, num_clients_per_domain)
+
+        for _ in range(num_clients_per_domain):
+            client_domain_mapper[cnt] = i
+            cnt += 1
+        
+        domain_clients.extend(c_d)
 
     for i in range(len(domain_clients)):
         domain_clients[i] = CustomDataset(domain_clients[i][0], domain_clients[i][1])
-    return domain_clients
+    return domain_clients, client_domain_mapper
     
 

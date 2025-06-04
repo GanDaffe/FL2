@@ -1,8 +1,9 @@
 from algorithm.import_lib import *
 
 class BaseClient(fl.client.NumPyClient):
-    def __init__(self, cid, net, trainloader, valloader, criterion, num_epochs=1):
+    def __init__(self, cid, domain_id, net, trainloader, valloader, criterion, num_epochs=1):
         self.cid = cid
+        self.domain_id = domain_id 
         self.net = net
         self.trainloader = trainloader
         self.valloader = valloader
@@ -30,6 +31,7 @@ class BaseClient(fl.client.NumPyClient):
             "accuracy": acc,
             "precision": prec,
             "recall": rec,
+            "domain_id": self.domain_id,
             "f1": f1, 
             "TP": TP, 
             "FP": FP, 

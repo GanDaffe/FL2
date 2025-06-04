@@ -33,7 +33,10 @@ class FedAvg(fl.server.strategy.Strategy):
             "test_tp": [], 
             "test_fp": [], 
             "test_tn": [], 
-            "test_fn": []
+            "test_fn": [], 
+            "d1_acc": [],
+            "d2_acc": [],
+            "d3_acc": []
         }
 
     def __repr__(self):
@@ -62,6 +65,7 @@ class FedAvg(fl.server.strategy.Strategy):
         loss = weighted_avg("loss")
         acc = weighted_avg("accuracy")
 
+
         self.result["round"].append(server_round)
         self.result["train_loss"].append(loss)
         self.result["train_accuracy"].append(acc)
@@ -83,6 +87,20 @@ class FedAvg(fl.server.strategy.Strategy):
         def weighted_avg(metric_name):
             return sum(r.num_examples * r.metrics[metric_name] for _, r in results) / total
         
+        client_in_domain = {}
+        for _, f in results: 
+            if f.metrics["domain_id"] not in client_in_domain:
+                client_in_domain[f.metrics["domain_id"]] = [] 
+            client_in_domain[f.metrics["domain_id"]].append(f)
+        
+        acc_per_domain = {}
+        for domain_id, clients in client_in_domain.items():
+            tot_domain = sum([f.num_examples for f in clients])
+            acc_domain = sum([f.num_examples * f.metrics["accuracy"] for f in clients]) / tot_domain
+
+            acc_per_domain[domain_id] = acc_domain
+            print(f"Domain {domain_id} R{server_round}: acc={acc:.4f}")
+
         loss = sum(r.num_examples * r.loss for _, r in results) / total
         acc = weighted_avg("accuracy")
         prec = weighted_avg("precision")
@@ -92,7 +110,7 @@ class FedAvg(fl.server.strategy.Strategy):
         FP = weighted_avg("FP") 
         TN = weighted_avg("TN") 
         FN = weighted_avg("FN") 
-
+        
         if server_round != 0:
             self.result["test_loss"].append(loss)
             self.result["test_accuracy"].append(acc)
@@ -103,6 +121,9 @@ class FedAvg(fl.server.strategy.Strategy):
             self.result["test_fp"].append(FP) 
             self.result["test_tn"].append(TN) 
             self.result["test_fn"].append(FN)  
+            self.result["d1_acc"].append(acc_per_domain.get(0, 0.0))
+            self.result["d2_acc"].append(acc_per_domain.get(1, 0.0))
+            self.result["d3_acc"].append(acc_per_domain.get(2, 0.0))
 
         print(f"Test R{server_round}: loss={loss:.4f}, acc={acc:.4f}, prec={prec:.4f}, recall={rec:.4f}, f1={f1:.4f}")
 

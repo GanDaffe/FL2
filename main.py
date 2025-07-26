@@ -55,12 +55,12 @@ print("\nLabel distribution in validation sets:")
 for i, val_data in enumerate(validation_set):
     label_counts = count_labels_in_dataset(val_data)
     print(f"  Client {i}: {label_counts}")
-    
+
 trainloaders = [DataLoader(train_set[i], batch_size=BATCH_SIZE) for i in range(len(train_set))]
 valloaders = [DataLoader(validation_set[i], batch_size=BATCH_SIZE) for i in range(len(validation_set))]
 
 NUM_ROUNDS = 50
-LEARNING_RATE = 0.003
+LEARNING_RATE = 0.1
 
 algo = None
 

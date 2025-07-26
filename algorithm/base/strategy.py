@@ -87,6 +87,9 @@ class FedAvg(fl.server.strategy.Strategy):
         def weighted_avg(metric_name):
             return sum(r.num_examples * r.metrics[metric_name] for _, r in results) / total
         
+        def sum_metric(metric_name):
+            return sum(r.num_examples * r.metrics[metric_name] for _, r in results)
+        
         client_in_domain = {}
         for _, f in results: 
             if f.metrics["domain_id"] not in client_in_domain:
@@ -106,10 +109,10 @@ class FedAvg(fl.server.strategy.Strategy):
         prec = weighted_avg("precision")
         rec = weighted_avg("recall")
         f1 = weighted_avg("f1")
-        TP = weighted_avg("TP") 
-        FP = weighted_avg("FP") 
-        TN = weighted_avg("TN") 
-        FN = weighted_avg("FN") 
+        TP = sum_metric("TP") 
+        FP = sum_metric("FP") 
+        TN = sum_metric("TN") 
+        FN = sum_metric("FN") 
         
         if server_round != 0:
             self.result["test_loss"].append(loss)

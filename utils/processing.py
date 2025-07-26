@@ -64,6 +64,11 @@ def data_processing(df, NUM_FEATURES):
    y_train = y_train.reshape(-1,20)[:,-1]
    return X_train, y_train
 
+def get_label_counts(dataset):
+    labels = dataset.targets
+    unique_labels, counts = torch.unique(labels, return_counts=True)
+    return dict(zip(unique_labels.tolist(), counts.tolist()))
+
 def get_clients_dataset(full_domain_data, num_domains, num_clients_per_domain):   
     set_seed(42)
     all_data = [] 

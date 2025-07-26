@@ -28,12 +28,34 @@ num_samples = sum([len(x) for x in data_full])
 clients_dataset, client_domain_mapper = get_clients_dataset(data_full, NUM_DOMAINS, NUM_CLIENTS_PER_DOMAIN)
 
 train_set, validation_set = [], []
+label_counts = [get_label_counts(clients_dataset[i]) for i in range(len(clients_dataset))]
 
 for i in range(len(clients_dataset)):
-    train, val = train_test_split(clients_dataset[i], test_size=0.2, random_state=RANDOM_STATE)
-    train_set.append(train)
+    print(f"Client {i+1} label counts: {label_counts[i]}")
+for i in range(len(clients_dataset)):
+    train_, val = train_test_split(clients_dataset[i], test_size=0.2, random_state=RANDOM_STATE)
+    train_set.append(train_)
     validation_set.append(val)
 
+def count_labels_in_dataset(dataset):
+    label_counts = {}
+    for _, label in dataset:
+        if label.item() in label_counts:
+            label_counts[label.item()] += 1
+        else:
+            label_counts[label.item()] = 1
+    return label_counts
+
+print("Label distribution in training sets:")
+for i, train_data in enumerate(train_set):
+    label_counts = count_labels_in_dataset(train_data)
+    print(f"  Client {i}: {label_counts}")
+
+print("\nLabel distribution in validation sets:")
+for i, val_data in enumerate(validation_set):
+    label_counts = count_labels_in_dataset(val_data)
+    print(f"  Client {i}: {label_counts}")
+    
 trainloaders = [DataLoader(train_set[i], batch_size=BATCH_SIZE) for i in range(len(train_set))]
 valloaders = [DataLoader(validation_set[i], batch_size=BATCH_SIZE) for i in range(len(validation_set))]
 
